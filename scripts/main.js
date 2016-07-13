@@ -43,8 +43,8 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             radius = Math.min(width, height) / 2;
         var color = ['#ff7f0e', '#1f77b4', '#d62728', '#2ca02c'];
         var arc = d3.svg.arc()
-            .outerRadius(radius - 60)
-            .innerRadius(120);
+            .outerRadius(radius - 5)
+            .innerRadius(radius - 80);
         var pie = d3.layout.pie()
             .sort(null)
             .value(function (d) { return d.doc_count; });
