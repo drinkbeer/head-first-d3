@@ -85,9 +85,9 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         
         function plot(params){
             //add axis
-//            this.append("g")
-//                .attr("class", "y axis")
-//                .call(yAxis);
+            this.append("g")
+                .attr("class", "y axis")
+                .call(yAxis);
             this.append("g")
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + height + ")")
