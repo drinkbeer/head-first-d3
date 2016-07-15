@@ -37,7 +37,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             // End query.
         }
     }).then(function (resp) {
-        console.log(resp);
+//        console.log(resp);
         // D3 code goes here.
         var data = resp.aggregations.policies.by_policy_id.buckets;
         console.log(data)
@@ -45,8 +45,8 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         var n = 10, // number of samples
             m = 3; // number of series
 
-        var data = d3.range(m).map(function() { return d3.range(n).map(Math.random); });
-        console.log(data);
+//        var data = d3.range(n).map(function() { return d3.range(m).map(Math.random); });
+//        console.log(data);
         var margin = {
             top: 20, 
             right: 30, 
@@ -58,21 +58,31 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
 
         //scale of x - total policies
         var x0 = d3.scale.ordinal()
-            .domain(d3.range(n))
+            .domain(data.map(function(entry){
+//                console.log(entry)
+                return entry.key;
+            }))
             .rangeBands([0, width], 0.2);
         //scale of x - each policy
         var x1 = d3.scale.ordinal()
             .domain(d3.range(m))
             .rangeBands([0, x0.rangeBand()]);
         var y = d3.scale.linear()
-            .domain([0, 1])
+            .domain([0, 20])
             .range([height, 0]);
-        var colorScale = d3.scale.category10();
+        var colorScale = d3.scale.ordinal()
+            .domain(["yes", "no", "maybe"])
+            .range(["green", "red", "blue"]);
         var xAxis = d3.svg.axis()
             .scale(x0)
             .orient("bottom");
         var yAxis = d3.svg.axis()
             .scale(y)
+            .orient("left");
+        var yGridlines = d3.svg.axis()
+            .scale(y)
+            .tickSize(-width, 0, 0)
+            .tickFormat("")
             .orient("left");
         //create chart
         var svg = d3.select("body").append("svg")
@@ -84,6 +94,11 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
         
         function plot(params){
+            //add yGridlines
+            this.append("g")
+                .call(yGridlines)
+                .classed("gridline", true)
+                .attr("transform", "translate(0,0)")
             //add axis
             this.append("g")
                 .attr("class", "y axis")
@@ -102,17 +117,19 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         })
 
         //add rects
-        chart.append("g").selectAll("g")
+        chart.selectAll(".bar")
                 .data(data)
                 .enter().append("g")
-                    .style("fill", function(d, i) { return colorScale(i); })
-                    .attr("transform", function(d, i) { return "translate(" + x1(i) + ",0)"; })
+                    .classed("bar-box", true)
+                    .attr("transform", function(d, i) { return "translate(" + x0(d.key) + ",0)"; })
                     .selectAll("rect")
-                        .data(function(d) { return d; })
+                        .classed("bar", true)
+                        .data(function(d) { return d.match_info.buckets; })
                         .enter().append("rect")
+                            .style("fill", function(d, i) { console.log(d);return colorScale(d.key); })
+                            .attr("x", function(d, i) { return x1(i); })
+                            .attr("y", function(d) { return y(d.doc_count); })
                             .attr("width", x1.rangeBand())
-                            .attr("height", y)
-                            .attr("x", function(d, i) { return x0(i); })
-                            .attr("y", function(d) { return height - y(d); });
+                            .attr("height", function(d){ return height - y(d.doc_count);});
     });
 });
