@@ -5,7 +5,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
 //        log: 'trace'
     });
     client.search({
-        index: 'logstash-sable-2016.07.12',
+        index: '',
         size: 5,
         body: {
             // Begin query.
