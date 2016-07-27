@@ -6,7 +6,8 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
     });
     client.search({
         index: '',
-        size: 5,
+        from: 100000,
+        size: 12,
         body: {
             // Begin query.
 //            query: {
@@ -24,7 +25,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                     },
                     "aggs": {
                         "by_policy_id" : {
-                            "terms" : {"field" : "policies.POLICY_ID"},
+                            "terms" : {"field" : "policies.POLICY_ID", size: 11},
                             "aggs": {
                                 "match_info" : {
                                     "terms" : {"field" : "policies.match"}
@@ -37,29 +38,26 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             // End query.
         }
     }).then(function (resp) {
-//        console.log(resp);
+        // console.log(resp);
         // D3 code goes here.
         var data = resp.aggregations.policies.by_policy_id.buckets;
+        data.shift()
         console.log(data)
         // d3 groupped bar chart
-        var n = 10, // number of samples
-            m = 3; // number of series
-
-//        var data = d3.range(n).map(function() { return d3.range(m).map(Math.random); });
-//        console.log(data);
+        var w = 960;
+        var y = 500;
         var margin = {
-            top: 20, 
+            top: 58, 
             right: 30, 
-            bottom: 30, 
-            left: 40
-        },
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+            bottom: 67, 
+            left: 100
+        };
+        var width = w - margin.left - margin.right;
+        var height = y - margin.top - margin.bottom;
 
         //scale of x - total policies
         var x0 = d3.scale.ordinal()
             .domain(data.map(function(entry){
-//                console.log(entry)
                 return entry.key;
             }))
             .rangeBands([0, width], 0.2);
@@ -94,7 +92,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         var chart = svg.append("svg:g")
                     .classed("display", true)
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-        
+        //create color legend
         d3.legend = function(g) {
           g.each(function() {
             var g= d3.select(this),
@@ -116,7 +114,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
               })
 
             items = d3.entries(items).sort(function(a,b) { return a.value.pos-b.value.pos})
-
 
             li.selectAll("text")
                 .data(["YES", "NO", "MAYBE"])
@@ -144,13 +141,14 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
           })
           return g
         }
+        
         function plot(params){
-            //add yGridlines
+            //attach yGridlines
             this.append("g")
                 .call(yGridlines)
                 .classed("gridline", true)
                 .attr("transform", "translate(0,0)")
-            //add axis
+            //attach axis
             this.append("g")
                 .attr("class", "y axis")
                 .call(yAxis);
@@ -158,9 +156,31 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .attr("class", "x axis")
                 .attr("transform", "translate(0," + height + ")")
                 .call(xAxis);
-            //add rects
+            this.select(".y.axis")
+                .append("text")
+                .attr("x", 0)
+                .attr("y", 0)
+                .style("text-anchor", "middle")
+                .attr("transform", "translate(-75, " + height/2 + "), rotate(-90)")
+                .text("Number of Records");
+            this.select(".x.axis")
+                .append("text")
+                .attr("x", 0)
+                .attr("y", 0)
+                .style("text-anchor", "middle")
+                .attr("transform", "translate(" + width/2 + ", 50)")
+                .text("Policy ID");
+            this.append("g")
+                .append("text")
+                .attr("x", (width / 2))
+                .attr("y", 0)
+                .classed("chart-header", true)
+                .style("text-anchor", "middle")
+                .attr("transform", "translate(0," + -24 + ")")
+                .text("Policy Match Diagram");
+            //attach rects
             this.selectAll(".bar")
-                .data(data)
+                .data(params.data)
                 .enter().append("g")
                     .classed("bar-box", true)
                     .attr("transform", function(d, i) { return "translate(" + x0(d.key) + ",0)"; })
@@ -173,7 +193,19 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                             .attr("y", function(d) { return y(d.doc_count); })
                             .attr("width", x1.rangeBand())
                             .attr("height", function(d){ return height - y(d.doc_count);});
-            //add color legend
+            this.selectAll(".bar-label")
+                .data(params.data)
+                .enter()
+                    .append("text")
+                    .classed("bar-label", true)
+                    .attr("x", function(d, i) { return x0(d.key); })
+                    .attr("y", function(d) { return y(d.doc_count); })
+                    .attr("dx", 10)
+                    .attr("dy", -6)
+                    .text(function(d, i){
+                        return d.doc_count;
+                    });
+            //attach color legend
             legend = this.append("g")
                 .attr("class","legend")
                 .attr("transform","translate(" + (width - 100) + ",30)")
@@ -184,16 +216,15 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .style("font-size","20px")
                 .attr("data-style-padding",10)
                 .call(d3.legend)
-            },1000)
+            },1000);
         }
         plot.call(chart, {
-            data: resp,
+            data: data,
             axis: {
                 x: xAxis,
                 y: yAxis
             }
-        })
-
+        });
 
     });
 });

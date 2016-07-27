@@ -2,28 +2,14 @@
 <html>
     <head>
         <title>Elastic Aggregations</title>
+        <link rel="stylesheet" href="main.css">
         <script src="scripts/require.js"></script>
         <script>require(["scripts/10-es-policyid-match-groupped-bar"], function () {})</script>
         <style>
-            .axis text {
-              font: 10px sans-serif;
-            }
-
-            .axis path,
-            .axis line {
-              fill: none;
-              stroke: #000;
-              shape-rendering: crispEdges;
-            }
-
-            .x.axis path {
-              display: none;
-            }
-            .gridline path,
-            .gridline line{
-                fill: none;
-                stroke: #ccc;
-                shape-rendering: crispEdges;
+            .bar-label{
+                fill: #000;
+                text-anchor: middle;
+                font-size: 15px;
             }
             .legend rect {
               fill:white;
