@@ -36,6 +36,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         console.log(resp);
         // D3 code goes here.
         var touchdowns = resp.aggregations.policies.match_info.buckets;
+        touchdowns.shift()
         console.log(touchdowns)
         // d3 donut chart
         var width = 600,

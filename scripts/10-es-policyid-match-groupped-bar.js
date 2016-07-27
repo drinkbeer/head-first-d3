@@ -1,8 +1,9 @@
+//http://sable-visualzation.us-east-1.elasticbeanstalk.com/sable-visualization/10-es-policyid-match-groupped-bar.html
 define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com',
-//        log: 'trace'
+        //log: 'trace'  //trace the executation status
     });
     client.search({
         index: '',
@@ -10,13 +11,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         size: 12,
         body: {
             // Begin query.
-//            query: {
-//                // Boolean query for matching and excluding items.
-//                bool: {
-//                    must: { match: { "description": "TOUCHDOWN" }},
-//                    must_not: { match: { "qtr": 5 }}
-//                }
-//            },
             // Aggregate on the results
             "aggs": {
                 "policies": { 
@@ -141,7 +135,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
           })
           return g
         }
-        
+        //main function
         function plot(params){
             //attach yGridlines
             this.append("g")
@@ -193,6 +187,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                             .attr("y", function(d) { return y(d.doc_count); })
                             .attr("width", x1.rangeBand())
                             .attr("height", function(d){ return height - y(d.doc_count);});
+            //attach bar label
             this.selectAll(".bar-label")
                 .data(params.data)
                 .enter()
@@ -218,6 +213,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .call(d3.legend)
             },1000);
         }
+        //call main function
         plot.call(chart, {
             data: data,
             axis: {
