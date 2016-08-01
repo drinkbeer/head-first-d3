@@ -2,7 +2,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com'
-        //log: 'trace'
     });
     client.search({
         index: '',
@@ -42,6 +41,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
 
         var r = Math.min(width, height) / 2;
         var labelr = r + 30; // radius for label anchor
+        //scaling of color
         var color = d3.scale.category20();
         var colorScale = d3.scale.ordinal()
             .domain(["yes", "no", "maybe"])
@@ -49,15 +49,17 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         var donut = d3.layout.pie();
         var arc = d3.svg.arc().innerRadius(r * .6).outerRadius(r);
 
-        var svg = d3.select("body").append("svg")
+        var svg = d3.select("#container").append("svg")
             .attr("id", "chart")
             .attr("width", w)
             .attr("height", h);
         var chart = svg.append("g")
             .classed("display", true)
-            //.attr("width", w)
-            //.attr("height", h)
             .attr("transform", "translate(" + margin.left + ", " + margin.top + ")");
+        var div = d3.select("body").append("div").attr("class", "toolTip");
+        
+        //remove loading spinner
+        d3.select("#loading").classed("loading", false)
 
         //create color legend
         d3.legend = function(g) {
@@ -111,7 +113,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         function plot(params){
             //bind data to component
             this.data([params.data])
-            //console.log(params.data)
             this.append("g")
                 .append("text")
                 .attr("x", (width / 2))
@@ -119,7 +120,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .classed("chart-header", true)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(0," + -24 + ")")
-                .text("Total Policy Match Statistics Diagram");
+                .text("Policy Match Statistics Diagram (2016.07.21-now)");
             var arcs = this.selectAll(".arc")
                 .data(donut.value(function(d) { return d.doc_count }))
                 .enter().append("g")
@@ -127,7 +128,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .attr("transform", "translate(" + (params.r + 30) + "," + params.r + ")")
 
             arcs.append("svg:path")
-                .attr("fill", function(d, i) { console.log(d); return colorScale(d.data.key); })
+                .attr("fill", function(d, i) { return colorScale(d.data.key); })
                 .attr("d", arc);
 
             arcs.append("svg:text")
@@ -145,6 +146,17 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                     return (d.endAngle + d.startAngle)/2 > Math.PI ? "end" : "start";
                 })
                 .text(function(d, i) { return d.value.toFixed(0); });
+            arcs.on("mousemove", function(d){
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                var total = d3.sum(params.data.map(function(d) { return d.doc_count; }));
+                var percent = Math.round(1000 * d.data.doc_count / total) / 10;
+                div.html("Match:"+(d.data.key)+"<br>"+(d.data.doc_count)+"<br>"+percent+"%");
+            });
+            arcs.on("mouseout", function(d){
+                div.style("display", "none");
+            });
             
             //attach color legend
             legend = this.append("g")
@@ -152,7 +164,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .attr("transform","translate(" + (width - 60) + ",30)")
                 .style("font-size","12px")
                 .call(d3.legend);
-            setTimeout(function() { 
+            setTimeout(function() {
                 legend
                 .style("font-size","20px")
                 .attr("data-style-padding",10)
@@ -163,7 +175,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         //call main function
         plot.call(chart, {
             data: data,
-            r : r,
+            r: r,
             labelr: labelr
         });
 

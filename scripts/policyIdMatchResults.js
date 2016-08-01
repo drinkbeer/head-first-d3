@@ -1,9 +1,7 @@
-//http://sable-visualzation.us-east-1.elasticbeanstalk.com/sable-visualization/10-es-policyid-match-groupped-bar.html
 define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com',
-        //log: 'trace'  //trace the executation status
     });
     client.search({
         index: '',
@@ -32,11 +30,9 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             // End query.
         }
     }).then(function (resp) {
-        // console.log(resp);
         // D3 code goes here.
         var data = resp.aggregations.policies.by_policy_id.buckets;
         data.shift()
-        console.log(data)
         // d3 groupped bar chart
         var w = 960;
         var y = 500;
@@ -79,13 +75,17 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             .tickFormat("")
             .orient("left");
         //create chart
-        var svg = d3.select("body").append("svg")
+        var svg = d3.select("#container").append("svg")
                     .attr("id", "chart")
                     .attr("width", width + margin.left + margin.right)
                     .attr("height", height + margin.top + margin.bottom);
         var chart = svg.append("svg:g")
                     .classed("display", true)
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+        //remove loading spinner
+        d3.select("#loading").classed("loading", false)
+        
         //create color legend
         d3.legend = function(g) {
           g.each(function() {
@@ -163,7 +163,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .attr("y", 0)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(" + width/2 + ", 50)")
-                .text("Policy ID");
+                .text("Policy ID (Top 10)");
             this.append("g")
                 .append("text")
                 .attr("x", (width / 2))
@@ -171,7 +171,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 .classed("chart-header", true)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(0," + -24 + ")")
-                .text("Policy Match Diagram");
+                .text("Policy Match Diagram (2016.07.21-now)");
             //attach rects
             this.selectAll(".bar")
                 .data(params.data)
