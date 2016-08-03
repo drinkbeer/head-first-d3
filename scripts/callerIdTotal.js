@@ -1,15 +1,13 @@
-define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) {
+define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com'
-        //log: 'trace'
     });
     client.search({
         index: '',
         size: 5,
         body: {
-            // Begin query.
-            // Aggregate on the results
+            // Begin query. Aggregate on the results
             "aggs": {
                 "callerid_match_info" : {
                     "terms" : {"field" : "request.input.CALLER_INFO.CALLER_ID.raw", size: 11}
@@ -82,7 +80,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
                 })
                 .attr("dy", ".35em")
                 .attr("text-anchor", function(d) {
-                    // are we past the center?
                     return (d.endAngle + d.startAngle)/2 > Math.PI ? "end" : "start";
                 })
                 .text(function(d, i) { return d.data.key; });

@@ -1,4 +1,4 @@
-define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) {
+define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com',
@@ -8,8 +8,7 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
         from: 100000,
         size: 12,
         body: {
-            // Begin query.
-            // Aggregate on the results
+            // Begin query. Aggregate on the results
             "aggs": {
                 "policies": { 
                     "nested": {

@@ -1,17 +1,14 @@
-//http://sable-visualzation.us-east-1.elasticbeanstalk.com/sable-visualization/10-es-policyid-match-groupped-bar.html
-define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) {
+define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com',
-        //log: 'trace'  //trace the executation status
     });
     client.search({
         index: '',
         from: 100000,
         size: 12,
         body: {
-            // Begin query.
-            // Aggregate on the results
+            // Begin query. Aggregate on the results
               "aggs": {
                 "by_caller_id" : {
                   "terms" : {"field" : "request.input.CALLER_INFO.CALLER_ID.raw"},
@@ -32,7 +29,6 @@ define(['scripts/d3.v3', 'scripts/elasticsearch'], function (d3, elasticsearch) 
             // End query.
         }
     }).then(function (resp) {
-        //console.log(resp);
         // D3 code goes here.
         var data = resp.aggregations.by_caller_id.buckets;
         // d3 groupped bar chart
