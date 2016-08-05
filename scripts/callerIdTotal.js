@@ -8,16 +8,52 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
         size: 5,
         body: {
             // Begin query. Aggregate on the results
+            "size" : 0,
             "aggs": {
-                "callerid_match_info" : {
-                    "terms" : {"field" : "request.input.CALLER_INFO.CALLER_ID.raw", size: 11}
+                "date_range_policies_aggs": {
+                    "filters": {
+                        "filters": {
+                            "last_one_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-1d/d"
+                                    }
+                                }
+                            },
+                            "last_three_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-3d/d"
+                                    }
+                                }
+                            },
+                            "last_seven_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-7d/d"
+                                    }
+                                }
+                            },
+                            "all_days": {
+                                "match_all": {}
+                            }
+                        }
+                    },
+                    "aggs": {
+                        "callerid_match_info" : {
+                            "terms" : {"field" : "request.input.CALLER_INFO.CALLER_ID.raw"}
+                        }
+                    }
                 }
             }
             // End query.
         }
     }).then(function (resp) {
         // D3 code goes here.
-        var data = resp.aggregations.callerid_match_info.buckets;
+        var data = resp.aggregations.date_range_policies_aggs.buckets.all_days.callerid_match_info.buckets;
+        var last_seven_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.callerid_match_info.buckets;
+        var last_three_days = resp.aggregations.date_range_policies_aggs.buckets.last_three_days.callerid_match_info.buckets;
+        var last_one_days = resp.aggregations.date_range_policies_aggs.buckets.last_one_days.callerid_match_info.buckets;
         // d3 donut chart
         var w = 600;
         var h = 500;
@@ -58,7 +94,16 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
                 .classed("chart-header", true)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(0," + -10 + ")")
-                .text("Caller ID Statistics Diagram (2016.07.21-now)");
+                .text(function(d){
+                    var d = new Date();
+                    d.setDate(d.getDate() - 7);
+                    var dd = d.getDate();
+                    var mm = d.getMonth()+1; //January is 0!
+                    var yyyy = d.getFullYear();
+                    if(dd<10) { dd='0'+dd } 
+                    if(mm<10) { mm='0'+mm } 
+                    return "Caller ID Statistics Diagram (" + mm + "/" + dd + "/" + yyyy + "-now)"
+                });
             var arcs = this.selectAll(".arc")
                 .data(donut.value(function(d) { return d.doc_count }))
                 .enter().append("g")

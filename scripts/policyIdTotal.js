@@ -8,14 +8,47 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
         size: 5,
         body: {
             // Begin query. Aggregate on the results
+            "size" : 0,
             "aggs": {
-                "policies": {
-                    "nested": {
-                        "path": "policies"
+                "date_range_policies_aggs": {
+                    "filters": {
+                        "filters": {
+                            "last_one_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-1d/d"
+                                    }
+                                }
+                            },
+                            "last_three_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-3d/d"
+                                    }
+                                }
+                            },
+                            "last_seven_days": {
+                                "range": {
+                                    "loggingTime": {
+                                        "from": "now-7d/d"
+                                    }
+                                }
+                            },
+                            "all_days": {
+                                "match_all": {}
+                            }
+                        }
                     },
                     "aggs": {
-                        "match_info" : {
-                            "terms" : {"field" : "policies.POLICY_ID", size: 11}
+                        "policies": { 
+                            "nested": {
+                                "path": "policies"
+                            },
+                            "aggs": {
+                                "match_info" : {
+                                    "terms" : {"field" : "policies.POLICY_ID", "size" : 11}
+                                }
+                            }
                         }
                     }
                 }
@@ -24,8 +57,14 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
         }
     }).then(function (resp) {
         // D3 code goes here.
-        var data = resp.aggregations.policies.match_info.buckets;
+        var data = resp.aggregations.date_range_policies_aggs.buckets.all_days.policies.match_info.buckets;
         data.shift();
+        var last_seven_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.match_info.buckets;
+        last_seven_days.shift();
+        var last_three_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.match_info.buckets;
+        last_three_days.shift();
+        var last_one_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.match_info.buckets;
+        last_one_days.shift();
         // d3 donut chart
         var w = 600;
         var h = 500;
@@ -66,7 +105,16 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
                 .classed("chart-header", true)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(0," + -24 + ")")
-                .text("Total Policy ID Statistics Diagram (2016.07.21-now)");
+                .text(function(d){
+                    var d = new Date();
+                    d.setDate(d.getDate() - 7);
+                    var dd = d.getDate();
+                    var mm = d.getMonth()+1; //January is 0!
+                    var yyyy = d.getFullYear();
+                    if(dd<10) { dd='0'+dd } 
+                    if(mm<10) { mm='0'+mm } 
+                    return "Total Policy ID Statistics Diagram (" + mm + "/" + dd + "/" + yyyy + "-now)"
+                });
             var arcs = this.selectAll(".arc")
                 .data(donut.value(function(d) { return d.doc_count }))
                 .enter().append("g")

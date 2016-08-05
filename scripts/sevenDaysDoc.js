@@ -24,13 +24,13 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
         data = data.slice(Math.max(data.length - 7, 1))
         data.forEach(function(d){ d.key_as_string = d.key_as_string.substring(0, 10) });
         // d3 donut chart
-        var w = 400;
+        var w = 500;
         var h = 500;
         var margin = {
             top: 100,
-            right: 30,
+            right: 50,
             bottom: 30,
-            left: 30
+            left: 50
         };
         var width = w - margin.left - margin.right;
         var height = h - margin.top - margin.bottom;
@@ -71,7 +71,16 @@ define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elastic
                 .classed("chart-header", true)
                 .style("text-anchor", "middle")
                 .attr("transform", "translate(0," + -30 + ")")
-                .text("Seven Days Log Statistics Diagram");
+                .text(function(d){
+                    var d = new Date();
+                    d.setDate(d.getDate() - 7);
+                    var dd = d.getDate();
+                    var mm = d.getMonth()+1; //January is 0!
+                    var yyyy = d.getFullYear();
+                    if(dd<10) { dd='0'+dd } 
+                    if(mm<10) { mm='0'+mm } 
+                    return "Seven Days Log Statistics Diagram(" + mm + "/" + dd + "/" + yyyy + "-now)"
+                });
             
             //create path (the arc)
             var path = chart.selectAll('path')
