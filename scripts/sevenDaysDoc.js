@@ -1,4 +1,4 @@
-define(['ext-scripts/d3.v3', 'ext-scripts/elasticsearch'], function (d3, elasticsearch) {
+define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3, elasticsearch) {
     "use strict";
     var client = new elasticsearch.Client({
         host: 'search-log-project-test-wujipdfohyl4gl56zcwp3y3btu.us-west-1.es.amazonaws.com'
