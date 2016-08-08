@@ -41,7 +41,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
     }).then(function (resp) {
         // D3 code goes here.
         var data =  resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.match_info.buckets;
-        last_seven_days.shift();
+        data.shift();
         // d3 donut chart
         var w = 600;
         var h = 500;
