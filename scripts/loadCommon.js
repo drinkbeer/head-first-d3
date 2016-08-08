@@ -51,9 +51,7 @@ loadDiagram = function(src) {
 loadScript('https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js',function(){
     loadHTML("/views/header.html", function(){
         $(".nav li").removeClass("active");
-        console.log("a[href=\"" + pathname + ".html" + "\"]")
         $("a[href*=\"" + pathname + ".html" + "\"]").parent().addClass("active");
-        console.log($("a[href=\"" + pathname + ".html" + "\"]").length)
     });
     
     // load the css file 

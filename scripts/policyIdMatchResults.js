@@ -14,29 +14,12 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 "date_range_policies_aggs": {
                     "filters": {
                         "filters": {
-                            "last_one_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-1d/d"
-                                    }
-                                }
-                            },
-                            "last_three_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-3d/d"
-                                    }
-                                }
-                            },
                             "last_seven_days": {
                                 "range": {
                                     "loggingTime": {
                                         "from": "now-7d/d"
                                     }
                                 }
-                            },
-                            "all_days": {
-                                "match_all": {}
                             }
                         }
                     },
@@ -63,13 +46,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
         }
     }).then(function (resp) {
         // D3 code goes here.
-        var data = resp.aggregations.date_range_policies_aggs.buckets.all_days.policies.by_policy_id.buckets;
-        data.shift();
-        var last_seven_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.by_policy_id.buckets;
-        last_seven_days.shift();
-        var last_three_days = resp.aggregations.date_range_policies_aggs.buckets.last_three_days.policies.by_policy_id.buckets;
-        last_seven_days.shift();
-        var last_one_days = resp.aggregations.date_range_policies_aggs.buckets.last_one_days.policies.by_policy_id.buckets;
+        var data = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.policies.by_policy_id.buckets;
         last_seven_days.shift();
         // d3 groupped bar chart
         var w = 960;

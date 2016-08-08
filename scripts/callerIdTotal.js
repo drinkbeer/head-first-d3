@@ -13,29 +13,12 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 "date_range_policies_aggs": {
                     "filters": {
                         "filters": {
-                            "last_one_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-1d/d"
-                                    }
-                                }
-                            },
-                            "last_three_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-3d/d"
-                                    }
-                                }
-                            },
                             "last_seven_days": {
                                 "range": {
                                     "loggingTime": {
                                         "from": "now-7d/d"
                                     }
                                 }
-                            },
-                            "all_days": {
-                                "match_all": {}
                             }
                         }
                     },
@@ -50,10 +33,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
         }
     }).then(function (resp) {
         // D3 code goes here.
-        var data = resp.aggregations.date_range_policies_aggs.buckets.all_days.callerid_match_info.buckets;
-        var last_seven_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.callerid_match_info.buckets;
-        var last_three_days = resp.aggregations.date_range_policies_aggs.buckets.last_three_days.callerid_match_info.buckets;
-        var last_one_days = resp.aggregations.date_range_policies_aggs.buckets.last_one_days.callerid_match_info.buckets;
+        var data = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.callerid_match_info.buckets;
         // d3 donut chart
         var w = 600;
         var h = 500;

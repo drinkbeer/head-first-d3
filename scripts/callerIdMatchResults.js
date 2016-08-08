@@ -14,29 +14,12 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 "date_range_policies_aggs": {
                     "filters": {
                         "filters": {
-                            "last_one_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-1d/d"
-                                    }
-                                }
-                            },
-                            "last_three_days": {
-                                "range": {
-                                    "loggingTime": {
-                                        "from": "now-3d/d"
-                                    }
-                                }
-                            },
                             "last_seven_days": {
                                 "range": {
                                     "loggingTime": {
                                         "from": "now-7d/d"
                                     }
                                 }
-                            },
-                            "all_days": {
-                                "match_all": {}
                             }
                         }
                     },
@@ -63,10 +46,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
         }
     }).then(function (resp) {
         // D3 code goes here.
-        var data = resp.aggregations.date_range_policies_aggs.buckets.all_days.by_caller_id.buckets;
-        var last_seven_days = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.by_caller_id.buckets;
-        var last_three_days = resp.aggregations.date_range_policies_aggs.buckets.last_three_days.by_caller_id.buckets;
-        var last_one_days = resp.aggregations.date_range_policies_aggs.buckets.last_one_days.by_caller_id.buckets;
+        var data = resp.aggregations.date_range_policies_aggs.buckets.last_seven_days.by_caller_id.buckets;
         // d3 groupped bar chart
         var w = 960;
         var y = 500;
@@ -117,6 +97,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
         var chart = svg.append("svg:g")
                     .classed("display", true)
                     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        var div = d3.select("body").append("div").attr("class", "toolTip");
         
         //remove loading spinner
         d3.select("#loading").classed("loading", false)
@@ -217,7 +198,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                     return "Caller ID Match Diagram (" + mm + "/" + dd + "/" + yyyy + "-now)"
                 });
             //attach rects
-            this.selectAll(".bar")
+            var bar = this.selectAll(".bar")
                 .data(params.data)
                 .enter().append("g")
                     .classed("bar-box", true)
@@ -231,22 +212,15 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                             .attr("y", function(d) { return y(d.doc_count); })
                             .attr("width", x1.rangeBand())
                             .attr("height", function(d){ return height - y(d.doc_count);});
-            //attach bar label
-            this.selectAll(".bar-label")
-                .data(params.data)
-                .enter()
-                    .append("text")
-                    .classed("bar-label", true)
-                    .attr("x", function(d, i) { return x0(d.key); })
-                    .attr("y", function(d) { 
-                        return y(d.doc_count); 
-                    })
-                    .attr("dx", 10)
-                    .attr("dy", -6)
-                    .text(function(d, i){
-                        var bucket = d.policies.match_info.buckets;
-                        return d.doc_count;
-                    });
+            bar.on("mousemove", function(d){
+                div.style("left", d3.event.pageX+10+"px");
+                div.style("top", d3.event.pageY-25+"px");
+                div.style("display", "inline-block");
+                div.html("Match: "+(d.key)+"<br>"+(d.doc_count));
+            });
+            bar.on("mouseout", function(d){
+                div.style("display", "none");
+            });
             //attach color legend
             legend = this.append("g")
                 .attr("class","legend")
@@ -259,6 +233,7 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 .attr("data-style-padding",10)
                 .call(d3.legend)
             },1000);
+            
         }
         //call main function
         plot.call(chart, {

@@ -116,10 +116,6 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 div.style("display", "none");
             });
 
-            //may remove later
-            //path.exit()
-            //    .remove();
-
             //create legend
             var legend = chart.selectAll('.legend')
                 .data(color.domain())
