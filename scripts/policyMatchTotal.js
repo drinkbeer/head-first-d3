@@ -154,21 +154,6 @@ define(['/ext-scripts/d3.v3.js', '/ext-scripts/elasticsearch.js'], function (d3,
                 .attr("fill", function(d, i) { return colorScale(d.data.key); })
                 .attr("d", arc);
 
-            arcs.append("svg:text")
-                .attr("transform", function(d) {
-                    var c = arc.centroid(d),
-                        x = c[0],
-                        y = c[1],
-                        // pythagorean theorem for hypotenuse
-                        h = Math.sqrt(x*x + y*y);
-                    return "translate(" + (x/h * params.labelr) +  ',' + (y/h * params.labelr) +  ")"; 
-                })
-                .attr("dy", ".35em")
-                .attr("text-anchor", function(d) {
-                    // are we past the center?
-                    return (d.endAngle + d.startAngle)/2 > Math.PI ? "end" : "start";
-                })
-                .text(function(d, i) { return d.value.toFixed(0); });
             arcs.on("mousemove", function(d){
                 div.style("left", d3.event.pageX+10+"px");
                 div.style("top", d3.event.pageY-25+"px");
