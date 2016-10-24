@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Basic Force Layout Diagram</title>
+<script src="d3.v3.js"></script>
+<style>
+path.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.0px;
+}
+
+path.link.twofive {
+  opacity: 0.25;
+  stroke: #A52A2A;
+}
+
+path.link.fivezero {
+  opacity: 0.25;
+  stroke: #A52A2A;
+}
+
+path.link.sevenfive {
+  opacity: 0.25;
+  stroke: #A52A2A;
+}
+
+path.link.onezerozero {
+  opacity: 0.25;
+  stroke: #8FBC8F;
+}
+
+path.link.twofive.highlight {
+  opacity: 0.75;
+  stroke-width: 2.5px;
+}
+
+path.link.fivezero.highlight {
+  opacity: 0.75;
+  stroke-width: 2.5px;
+}
+
+path.link.sevenfive.highlight {
+  opacity: 0.75;
+  stroke-width: 2.5px;
+}
+
+path.link.onezerozero.highlight {
+  opacity: 0.75;
+  stroke-width: 2.5px;
+}
+    
+path.link.twofive.hide {
+  opacity: 0;
+  stroke-width: 0px;
+}
+
+path.link.fivezero.hide {
+  opacity: 0;
+  stroke-width: 0px;
+}
+
+path.link.sevenfive.hide {
+  opacity: 0;
+  stroke-width: 0px;
+}
+
+path.link.onezerozero.hide {
+  opacity: 0;
+  stroke-width: 0px;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+text {
+  fill: #000;
+  font: 10px sans-serif;
+  pointer-events: none;
+}
+
+#horizon-controls {
+  position: absolute;
+  width: 940px;
+  padding: 10px;
+  z-index: 1;
+}
+</style>
+</head>
+
+<body>
+<div id="horizon-controls">
+  <input name="mode" type="radio" value="all" id="horizon-all" checked><label for="horizon-all"> All</label>
+  <input name="mode" type="radio" value="strong" id="horizon-strong"><label for="horizon-strong"> Strong Submissions</label>
+  <input name="mode" type="radio" value="weak" id="horizon-weak"><label for="horizon-weak"> Weak Submissions</label>
+  <input name="mode" type="radio" value="easy" id="horizon-easy-going"><label for="horizon-easy-going"> Easy-going Reviewers</label>
+  <input name="mode" type="radio" value="critical" id="horizon-critical"><label for="horizon-critical"> Critical Reviewers</label>
+  <input name="mode" type="radio" value="colludes" id="horizon-colludes"><label for="horizon-colludes"> Colludes</label>
+</div>
+
+<!--D3 script starts here -->
+<script>
+filepaths = ["collusion_detection_sample_724.txt", "collusion_detection_sample_733_wikib.txt", "collusion_detection_sample_749_final.txt","collusion_detection_sample_736_OSS.txt"]
+d3.json(filepaths[3], function(err, d){
+
+var nodes = d.actors;
+var links = d.crituques;
+var coll_cyc = d.colluder_sycles;
+
+// Change 'reviewer_actor_id' to 'source', change 'reviewee_actor_id' to 'target'
+// Compute the distinct nodes from the links.
+var nodes = {}
+links.forEach(function(link) {
+    link.source = link.reviewer_actor_id
+    delete link.reviewer_actor_id
+    link.target = link.reviewee_actor_id
+    delete link.reviewee_actor_id
+    link.value = link.score
+    delete link.score
+    link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
+    link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
+    link.value = +link.value;
+});
+
+var w = 1200;
+var h = 1000;
+var margin = {
+    top: 0,
+    bottom: 0,
+    left: 100,
+    right: 100
+};
+var width = w - margin.left - margin.right;
+var height = h - margin.top - margin.bottom;
+
+var force = d3.layout.force()
+    .nodes(d3.values(nodes))
+    .links(links)
+    .size([width, height])
+    .linkDistance(400)
+    .charge(-300)
+    .on("tick", tick)
+    .start();
+    
+// Set the range
+var  v = d3.scale.linear().range([0, 100]);
+
+// Scale the range of the data
+v.domain([0, d3.max(links, function(d) { return d.value; })]);
+
+// asign a type per value to encode opacity
+links.forEach(function(link) {
+	if (v(link.value) <= 25) {
+		link.type = "twofive";
+	} else if (v(link.value) <= 80 && v(link.value) > 25) {
+		link.type = "fivezero";
+	} else if (v(link.value) <= 90 && v(link.value) > 80) {
+		link.type = "sevenfive";
+	} else if (v(link.value) <= 100 && v(link.value) > 90) {
+		link.type = "onezerozero";
+	}
+});
+    
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+    
+// build the arrow.
+svg.append("svg:defs").selectAll("marker")
+    .data(["end"])      // Different link/path types can be defined here
+    .enter().append("svg:marker")    // This section adds in the arrows
+    .attr("id", String)
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 15)
+        .attr("refY", -1.5)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+    .append("svg:path")
+        .attr("d", "M0,-5L10,0L0,5");
+
+// add the links and the arrows
+var path = svg.append("svg:g").selectAll("path")
+    .data(force.links())
+    .enter().append("svg:path")
+        .attr("class", function(d) { return "link " + d.type; })
+        .attr("marker-end", "url(#end)")
+        .attr("source", function(d){ return d.source.name })
+        .attr("target", function(d){ return d.target.name });
+
+// define the nodes
+var node = svg.selectAll(".node")
+    .data(force.nodes())
+    .enter().append("g")
+        .attr("class", "node")
+        .on("click", click)
+        .on("dblclick", dblclick)
+        .call(force.drag);
+
+// add the nodes
+node.append("circle")
+    .attr("r", 5);
+
+// add the text 
+node.append("text")
+    .attr("x", 12)
+    .attr("dy", ".35em")
+    .text(function(d) { return d.name; });
+
+// add the curvy lines
+function tick() {
+    path.attr("d", function(d) {
+        var dx = d.target.x - d.source.x,
+            dy = d.target.y - d.source.y,
+            dr = Math.sqrt(dx * dx + dy * dy);
+        return "M" + 
+            d.source.x + "," + 
+            d.source.y + "A" + 
+            dr + "," + dr + " 0 0,1 " + 
+            d.target.x + "," + 
+            d.target.y;
+    });
+
+    node.attr("transform", function(d) {
+        return "translate(" + d.x + "," + d.y + ")"; 
+    });
+}
+
+// Click function
+function click() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 22)
+        .style("fill", "steelblue")
+        .style("stroke", "lightsteelblue")
+        .style("stroke-width", ".5px")
+        .style("font", "20px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 12)
+//        .style("fill", "lightsteelblue");
+    d3.select(this).select("text")
+        .call(function(d){ 
+            unityid = d[0][0].innerHTML;
+            // console.log(unityid);
+            d3.selectAll("[source="+unityid+"],[target="+unityid+"]")
+                .call(function(d){ 
+                    d[0].forEach(function(p){
+                        if(p.attributes[0].nodeValue.substring(p.attributes[0].nodeValue.lastIndexOf(" ")+1)!="highlight"){
+                            p.attributes[0].nodeValue=p.attributes[0].nodeValue+" highlight";
+                        }
+                    });
+                })
+        })
+}
+
+// Double click function
+function dblclick() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 12)
+        .style("fill", "black")
+        .style("stroke", "none")
+        .style("stroke-width", ".5px")
+        .style("font", "10px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 6)
+//        .style("fill", "#ccc");
+    d3.select(this).select("text")
+        .call(function(d){ 
+            unityid = d[0][0].innerHTML;
+            // console.log(unityid);
+            d3.selectAll("[source="+unityid+"],[target="+unityid+"]")
+                .call(function(d){ 
+                    d[0].forEach(function(p){
+                        if(p.attributes[0].nodeValue.substring(p.attributes[0].nodeValue.lastIndexOf(" ")+1)=="highlight"){
+                            p.attributes[0].nodeValue=p.attributes[0].nodeValue.substring(0,p.attributes[0].nodeValue.lastIndexOf(" "));
+                        }
+                    });
+                })
+        })
+}
+    
+// Highlight node/text/in edge function
+function highlight_in() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 22)
+        .style("fill", "steelblue")
+        .style("stroke", "lightsteelblue")
+        .style("stroke-width", ".5px")
+        .style("font", "20px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 12)
+//        .style("fill", "lightsteelblue");
+    d3.select(this).select("text")
+        .call(function(d){
+            unityid = d[0][0].innerHTML;
+            d3.selectAll("path")[0].filter(function(path){
+                p=d3.select(path)
+                postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+                if(p.attr("target")==unityid){
+                    if(postfix=="hide"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue.substring(0,p[0][0].attributes[0].nodeValue.lastIndexOf(" "));
+                        postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+                    }
+                    if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" highlight";
+                    }
+                }else{
+                    if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" hide";
+                    }
+                }
+                
+            })
+        })
+}
+    
+// Unhighlight node/text/in edge function
+function unhighlight_in() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 12)
+        .style("fill", "black")
+        .style("stroke", "none")
+        .style("stroke-width", ".5px")
+        .style("font", "10px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 6)
+//        .style("fill", "#ccc");
+    d3.select(this).select("text")
+        .call(function(d){ 
+            unityid = d[0][0].innerHTML;
+            d3.selectAll("path")[0].filter(function(path){
+                p=d3.select(path)
+                postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+                if(postfix=="hide" || postfix=="highlight"){
+                    p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue.substring(0,p[0][0].attributes[0].nodeValue.lastIndexOf(" "));
+                }
+            })
+        })
+}
+
+// Highlight node/text/in edge function
+function highlight_out() {
+    d3.select(this).select("text").transition()
+        .duration(750)
+        .attr("x", 22)
+        .style("fill", "steelblue")
+        .style("stroke", "lightsteelblue")
+        .style("stroke-width", ".5px")
+        .style("font", "20px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 16)
+//        .style("fill", "lightsteelblue");
+    d3.select(this).select("text")
+        .call(function(d){ 
+            unityid = d[0][0].innerHTML;
+            // console.log(unityid);
+            d3.selectAll("path")[0].filter(function(path){
+                p=d3.select(path)
+                postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+                if(p.attr("source")==unityid){
+                    if(postfix=="hide"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue.substring(0,p[0][0].attributes[0].nodeValue.lastIndexOf(" "));
+                        postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+                    }
+                    if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" highlight";
+                    }
+                }else{
+                    if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                        p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" hide";
+                    }
+                }
+            })
+        })
+}
+    
+// Unhighlight node/text/in edge function
+//function unhighlight_out() {
+//    d3.select(this).select("text").transition()
+//        .duration(750)
+//        .attr("x", 12)
+//        .style("fill", "black")
+//        .style("stroke", "none")
+//        .style("stroke-width", ".5px")
+//        .style("font", "10px sans-serif");
+//    d3.select(this).select("circle").transition()
+//        .duration(750)
+//        .attr("r", 6)
+//        .style("fill", "#ccc");
+//    d3.select(this).select("text")
+//        .call(function(d){ 
+//            unityid = d[0][0].innerHTML;
+//            // console.log(unityid);
+//            d3.selectAll("[source="+unityid+"]")
+//                .call(function(d){ 
+//                    d[0].forEach(function(p){
+//                        if(p.attributes[0].nodeValue.substring(p.attributes[0].nodeValue.lastIndexOf(" ")+1)=="highlight"){
+//                            p.attributes[0].nodeValue=p.attributes[0].nodeValue.substring(0,p.attributes[0].nodeValue.lastIndexOf(" "));
+//                        }
+//                    });
+//                })
+//        })
+//}
+    
+function highlight_nodes(s,e){
+//    d3.select(this).select("text").transition()
+//        .duration(750)
+//        .attr("x", 22)
+//        .style("fill", "steelblue")
+//        .style("stroke", "lightsteelblue")
+//        .style("stroke-width", ".5px")
+//        .style("font", "20px sans-serif");
+    d3.selectAll("text")[0].filter(function(text){
+        t=d3.select(text)
+        if(t[0][0].textContent==s||t[0][0].textContent==e){
+            t.style("fill", "steelblue");
+            t.style("stroke", "lightsteelblue");
+            t.style("stroke-width", ".5px");
+            t.style("font", "20px sans-serif");
+        }
+        
+    })
+    d3.selectAll("path")[0].filter(function(path){
+        p=d3.select(path)
+        postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+        if(p.attr("source")==s && p.attr("target")==e){
+            if(postfix=="hide"){
+                p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue.substring(0,p[0][0].attributes[0].nodeValue.lastIndexOf(" "));
+                postfix=p[0][0].attributes[0].nodeValue.substring(p[0][0].attributes[0].nodeValue.lastIndexOf(" ")+1)
+            }
+            if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" highlight";
+            }
+        }else{
+            if(postfix=="twofive"||postfix=="fivezero"||postfix=="sevenfive"||postfix=="onezerozero"){
+                p[0][0].attributes[0].nodeValue=p[0][0].attributes[0].nodeValue+" hide";
+            }
+        }
+    })
+}
+
+d3.selectAll("#horizon-controls input[name=mode]").on("change", function() {
+    // console.log(this.value);
+    if(this.value=='strong'){
+        d3.selectAll(".node")
+            .call(function(d){
+                console.log(d[0]);
+                d[0].forEach(function(n){
+                    paths=d3.selectAll("[target="+n.__data__.name+"]");
+                    strong_paths=paths[0].filter(function(d){ return d.attributes[0].nodeValue.match(/onezerozero/); })
+                    if(paths[0].length > 0){
+                        if(Math.floor((strong_paths.length/paths[0].length)*100)>80){
+                            console.log(n.__data__.name + "  Percentage: " + Math.floor((strong_paths.length/paths[0].length)*100));
+                            if (typeof highlight_in == "function") {
+                                highlight_in.apply(n);
+                            }
+                        }
+                    }
+                });
+            });
+    }else if(this.value=='weak'){
+        d3.selectAll(".node")
+            .call(function(d){
+                //console.log(d[0]);
+                d[0].forEach(function(n){
+                    paths=d3.selectAll("[target="+n.__data__.name+"]");
+                    weak_paths=paths[0].filter(function(d){ return d.attributes[0].nodeValue.match(/fivezero/) || d.attributes[0].nodeValue.match(/twofive/) || d.attributes[0].nodeValue.match(/sevenfive/); })
+                    if(paths[0].length > 0){
+                        console.log(n.__data__.name + "  Percentage: " + Math.floor((weak_paths.length/paths[0].length)*100));
+                        if(Math.floor((weak_paths.length/paths[0].length)*100)>80){
+                            if (typeof highlight_in == "function") {
+                                highlight_in.apply(n);
+                            }
+                        }
+                    }
+                });
+            });
+    }else if(this.value=='easy'){
+        d3.selectAll(".node")
+            .call(function(d){
+                //console.log(d[0]);
+                d[0].forEach(function(n){
+                    paths=d3.selectAll("[source="+n.__data__.name+"]");
+                    easy_paths=paths[0].filter(function(d){ return d.attributes[0].nodeValue.match(/onezerozero/); })
+                    if(paths[0].length > 0){
+                        if(Math.floor((easy_paths.length/paths[0].length)*100)>80){
+                            //console.log(n.__data__.name + "  Percentage: " + Math.floor((easy_paths.length/paths[0].length)*100));
+                            if (typeof highlight_out == "function") {
+                                highlight_out.apply(n);
+                            }
+                        }
+                    }
+                });
+            });
+    }else if(this.value=='critical'){
+        d3.selectAll(".node")
+            .call(function(d){
+                //console.log(d[0]);
+                d[0].forEach(function(n){
+                    paths=d3.selectAll("[source="+n.__data__.name+"]");
+                    easy_paths=paths[0].filter(function(d){ return d.attributes[0].nodeValue.match(/fivezero/) || d.attributes[0].nodeValue.match(/twofive/); })
+                    if(paths[0].length > 0){
+                        console.log(n.__data__.name + "  Percentage: " + Math.floor((easy_paths.length/paths[0].length)*100));
+                        if(Math.floor((easy_paths.length/paths[0].length)*100)>90){
+                            
+                            if (typeof highlight_out == "function") {
+                                highlight_out.apply(n);
+                            }
+                        }
+                    }
+                });
+            });
+    }else if(this.value=='colludes'){
+        // console.log(coll_cyc);
+        coll_cyc.forEach(function(coll){
+            //console.log(coll)
+            c=coll.colluders
+            len=c.length
+            for(var i = 0; i < len; i++){
+                s=c[i%len].id
+                e=c[(i+1)%len].id
+                //console.log(s+' --> '+e)
+                highlight_nodes(s,e)
+            }
+        });
+    }else{
+        d3.selectAll(".node")
+            .call(function(d){
+                d[0].forEach(function(n){
+                    unhighlight_in.apply(n);
+                });
+            });
+    }
+});
+    
+});
+
+</script>	
+</body>
+</html>
