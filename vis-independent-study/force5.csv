@@ -1,0 +1,17 @@
+source,target,value
+Sarah,Alice,0.2
+Eveie,Alice,0.5
+Peter,Alice,1.6
+Mario,Alice,0.4
+Alice,Mario,0.7
+Sarah,James,1.9
+Maddy,James,0.3
+Alice,Peter,1.1
+Alice,Eveie,0.5
+Harry,Eveie,0.1
+Eveie,Harry,2.0
+James,Sarah,1.5
+Alice,Sarah,0.6
+James,Maddy,0.5
+Peter,Peter,1.6
+Harry,Harry,1.6
